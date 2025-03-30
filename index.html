@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>3D翻书效果</title>
     <style>
         :root {
-            --w: 240px; 
-            --h: 240px; 
+            --w: 240px;
+            --h: 240px;
         }
+        
         body {
             margin: 0;
             display: flex;
@@ -30,8 +31,8 @@
             perspective: 1600px;
             transform-style: preserve-3d;
         }
+        
         .book-cover {
-            /* 封面比页面每条边宽25px */
             height: calc(var(--h) + 50px);
             width: calc(var(--w) + 50px);
             position: absolute;
@@ -43,22 +44,47 @@
             backface-visibility: visible;
             border: .5px solid black;
         }
+
+        /* 修改后的页面样式 */
+        .page-front, .page-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background-size: cover;
+            background-position: center;
+            transform-style: preserve-3d; /* 新增3D变换支持 */
+        }
+        .page-front {
+            transform: rotateY(0deg);
+        }
+        .page-back {
+            transform: rotateY(180deg); /* 添加水平镜像翻转 */
+        }
+
+        /* 修改后的翻页动画 */
+        .flipping {
+            transform: rotateY(-180deg);
+        }
+    
         .book-page {
             height: var(--h);
             width: var(--w);
             position: absolute;
             z-index: 100;
             transition: 1s;
-            /* 封面比页面每条边宽的长度 */
-            transform-origin: -25px;
+            transform-origin: -25px; /* 改为左侧边缘旋转 */
             background-size: cover;
-            backface-visibility: visible;
+            transform-style: preserve-3d; /* 新增3D变换支持 */
+            /* backface-visibility: visible; */
+            /* box-shadow: 0 0 5px rgba(0,0,0,0.1); */
         }
 
         #control {
             margin-top: 60px;
             user-select: none;
         }
+        
         #control button {
             display: inline-block;
             width: 45px;
@@ -71,113 +97,162 @@
             border-radius: 50%;
             background-color: rgba(63,63,63,.8);
             outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #control button:hover {
+            background-color: rgba(83,83,83,.9);
         }
     </style>
 </head>
 <body>
     <div id="book">
-        <div class="book-cover one-page"></div>
+        <div class="book-cover one-page">
+            <div class="page-front"></div>
+            <div class="page-back"></div>
+        </div>
 
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
+        <!-- 修改后的书页结构 -->
+        <div class="book-page one-page">
+            <div class="page-front" style="background-image: url('1.jpg')"></div>
+            <div class="page-back" style="background-image: url('2.jpg')"></div>
+        </div>
+        <div class="book-page one-page">
+            <div class="page-front" style="background-image: url('3.jpg')"></div>
+            <div class="page-back" style="background-image: url('4.jpg')"></div>
+        </div>
+        <div class="book-page one-page">
+            <div class="page-front" style="background-image: url('5.jpg')"></div>
+            <div class="page-back" style="background-image: url('6.jpg')"></div>
+        </div>
+        <div class="book-page one-page">
+            <div class="page-front" style="background-image: url('7.jpg')"></div>
+            <div class="page-back" style="background-image: url('8.jpg')"></div>
+        </div>
+        <!-- 重复其他书页结构... -->
 
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
-        <div class="book-page one-page"></div>
-
-        <div class="book-cover one-page"></div>
+        <div class="book-cover one-page">
+            <div class="page-front"></div>
+            <div class="page-back"></div>
+        </div>
     </div>
+    
     <div id="control">
         <button>&lt;</button>
         <button>&gt;</button>
     </div>
 
-    <script>
-        // 总页数
-        const PAGECOUNT = 10
-        // 当前页面编号
-        let pageNo = 0
 
-        // 内容页
-        let pages = document.querySelectorAll('.book-page')
-        // 封面页
-        let cover = document.querySelectorAll('.book-cover')
-        // 按钮
-        let btn = document.querySelectorAll('#control button')
-        // 
-        let book = document.querySelector('#book')
-        // 所有页
-        let allPages = document.querySelectorAll('.one-page')
 
-        function init() {
-            // 初始化内容页的图片
-            for (let index = 0; index < pages.length; index++) {
-                pages[index].style.backgroundImage = "url('" + [index+1] + ".jpg')"
-                pages[index].style.zIndex = PAGECOUNT - index - 1
-            }
-            cover[0].style.zIndex = PAGECOUNT
-            cover[1].style.zIndex = 1
 
-            // 默认页面为封面，左按钮无效
-            btn[0].style.backgroundColor = "rgba(110, 110, 110, 0.5)"
-            btn[0].style.color = "darkgray"
-            btn[0].disabled = true
+   <script>
+    // 总页数（包括封面和封底）
+    const PAGECOUNT = 6
+    // 当前页码（从0开始计数）
+    let pageNo = 0
+
+    // 获取DOM元素
+    let pages = document.querySelectorAll('.book-page')      // 所有内容页
+    let cover = document.querySelectorAll('.book-cover')     // 封面和封底
+    let btn = document.querySelectorAll('#control button')   // 翻页按钮
+    let book = document.querySelector('#book')               // 书本容器
+    let allPages = document.querySelectorAll('.one-page')    // 所有页面（包括封面封底）
+
+    // 初始化函数
+    function init() {
+        // 初始化页面层级（z-index）
+        allPages.forEach((page, index) => {
+            // 越靠前的页面z-index越大，显示在上层
+            page.style.zIndex = PAGECOUNT - index
+        })
+
+        // 更新按钮状态的函数
+        const updateButtons = () => {
+            // 上一页按钮：在第一页时禁用
+            btn[0].disabled = pageNo === 0
+            // 下一页按钮：在最后一页时禁用
+            btn[1].disabled = pageNo === PAGECOUNT
             
-            // 左翻页
+            // 根据按钮状态改变样式
+            btn[0].style.backgroundColor = pageNo === 0 
+                ? "rgba(110, 110, 110, 0.5)"  // 禁用状态颜色
+                : "rgba(63, 63, 63, 0.8)"     // 可用状态颜色
+                
+            btn[1].style.backgroundColor = pageNo === PAGECOUNT 
+                ? "rgba(110, 110, 110, 0.5)"  // 禁用状态颜色
+                : "rgba(63, 63, 63, 0.8)"     // 可用状态颜色
+        }
+
+            // 上一页按钮点击事件
             btn[0].onclick = function() {
-                pageNo -- 
-                // 如果当前是最后一页，并往前翻
+                pageNo-- // 页码减1
+                
+                // 如果是从最后一页往回翻
                 if ((PAGECOUNT - 1) == pageNo) {
+                    // 将最后一页恢复为0度（不翻转）
                     allPages[pageNo].style.transform = 'rotateY(0deg)'
-                    //( 240px + 50px ) * 0.5
+                    // 书本整体向右移动145px（保持视觉居中）
                     book.style.transform = 'translateX(145px)'
+                    // 启用"下一页"按钮
                     btn[1].style.backgroundColor = "rgba(63, 63, 63, 0.8)"
                     btn[1].style.color = "white"
                     btn[1].disabled = false   
                 }
                 else {
+                    // 普通页面向左翻转恢复
                     allPages[pageNo].style.transform = 'rotateY(0deg)'
                 }
+                
+                // 更新页面层级
                 allPages[pageNo].style.zIndex = PAGECOUNT - pageNo
 
+                // 如果回到封面页
                 if( 0 == pageNo ) {
+                    // 禁用"上一页"按钮
                     btn[0].style.backgroundColor = "rgba(110, 110, 110, 0.5)"
                     btn[0].style.color = "darkgray"
                     btn[0].disabled = true
+                    // 书本整体位置复位
                     book.style.transform = 'translateX(0px)'
                 }
             }
 
-            // 右翻页
+            // 下一页按钮点击事件
             btn[1].onclick = function() {
-                // 如果当前是第一页，并往后翻
+                // 如果是从封面页开始翻页
                 if ( 0 == pageNo ) {
+                    // 封面向右翻转180度
                     allPages[pageNo].style.transform = 'rotateY(-180deg)'
-                    //( 240px + 50px ) * 0.5
+                    // 书本整体向右移动145px（保持视觉居中）
                     book.style.transform = 'translateX(145px)'
+                    // 启用"上一页"按钮
                     btn[0].style.backgroundColor = "rgba(63, 63, 63, 0.8)"
                     btn[0].style.color = "white"
                     btn[0].disabled = false   
                 }
                 else {
+                    // 普通页面向右翻转180度
                     allPages[pageNo].style.transform = 'rotateY(-180deg)'
                 }
 
+                // 更新页面层级（翻过去的页面放在上层）
                 allPages[pageNo].style.zIndex = 1000 + pageNo
-                pageNo ++
+                pageNo++ // 页码加1
 
+                // 如果到达最后一页
                 if( PAGECOUNT == pageNo ) {
+                    // 禁用"下一页"按钮
                     btn[1].style.backgroundColor = "rgba(110, 110, 110, 0.5)"
                     btn[1].style.color = "darkgray"
                     btn[1].disabled = true
+                    // 书本整体向右移动更多（适应最后一页）
                     book.style.transform = 'translateX(300px)'
                 }
             }
         }
-        init()
-    </script>
+        
+    // 执行初始化
+    init()
+</script>
 </body>
 </html>
