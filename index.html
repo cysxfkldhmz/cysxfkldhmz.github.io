@@ -103,6 +103,60 @@
         #control button:hover {
             background-color: rgba(83,83,83,.9);
         }
+
+
+
+
+
+    /* 添加以下CSS样式，这是录音模块的css样式 */
+    #audioControl {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;   /*改变位置*/
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    #recordBtn {
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    #recordBtn:hover {
+        background: #ff6666;
+    }
+
+    #recordBtn.recording {
+        background: #00cc00;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .recording-item {
+        margin-top: 10px;
+        color: white;
+    }
+
+    .play-button {
+        background: #3dd6f5;
+        border: none;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        margin-left: 10px;
+        cursor: pointer;
+    }
     </style>
 </head>
 <body>
@@ -140,6 +194,11 @@
     <div id="control">
         <button>&lt;</button>
         <button>&gt;</button>
+    </div>
+
+    <div id="audioControl">
+        <button id="recordBtn">⏺ 开始录音</button>
+        <div id="playbackList"></div>
     </div>
 
 
@@ -250,6 +309,69 @@
                 }
             }
         }
+
+
+
+    // 开始录音按钮点击事件
+// 录音功能脚本
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+
+    // 获取录音按钮和播放列表
+    const recordBtn = document.getElementById('recordBtn');
+    const playbackList = document.getElementById('playbackList');
+
+    // 检查浏览器支持
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // 请求麦克风权限
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = e => {
+                    audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks);
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // 创建播放元素
+                    const audioElement = document.createElement('div');
+                    audioElement.className = 'recording-item';
+                    audioElement.innerHTML = `
+                        <audio controls src="${audioUrl}"></audio>
+                        <button class="play-button" onclick="this.previousElementSibling.play()">播放</button>
+                        <a href="${audioUrl}" download="recording-${Date.now()}.mp3">下载</a>`;
+                    
+                    playbackList.prepend(audioElement);
+                    audioChunks = [];
+                };
+            })
+            .catch(err => {
+                console.error('无法访问麦克风:', err);
+                recordBtn.disabled = true;
+            });
+    } else {
+        recordBtn.disabled = true;
+        console.warn('浏览器不支持录音功能');
+    }
+
+    // 录音按钮点击处理
+    recordBtn.onclick = () => {
+        if (!isRecording) {
+            mediaRecorder.start();
+            recordBtn.textContent = '⏹ 停止录音';
+            recordBtn.classList.add('recording');
+            isRecording = true;
+        } else {
+            mediaRecorder.stop();
+            recordBtn.textContent = '⏺ 开始录音';
+            recordBtn.classList.remove('recording');
+            isRecording = false;
+        }
+    };
         
     // 执行初始化
     init()
