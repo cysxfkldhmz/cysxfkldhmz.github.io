@@ -157,6 +157,16 @@
         margin-left: 10px;
         cursor: pointer;
     }
+    .download-link {
+        background: #00cc00;
+        border: none;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        margin-left: 10px;
+        cursor: pointer;
+    }
+
     </style>
 </head>
 <body>
@@ -343,7 +353,7 @@
                     audioElement.innerHTML = `
                         <audio controls src="${audioUrl}"></audio>
                         <button class="play-button" onclick="this.previousElementSibling.play()">播放</button>
-                        <a href="${audioUrl}" download="recording-${Date.now()}.mp3">下载</a>`;
+                        <a class="download-link" href="${audioUrl}" download="recording-${Date.now()}.mp3">下载</a>`;
                     
                     playbackList.prepend(audioElement);
                     audioChunks = [];
