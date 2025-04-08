@@ -158,13 +158,42 @@
         cursor: pointer;
     }
     .download-link {
-        background: #00cc00;
+        background: #3dd6f5;
+        font-size: 13px;
+        text-decoration: none; 
         border: none;
         color: white;
-        padding: 5px 10px;
+        padding: 4px 8px;
         border-radius: 3px;
         margin-left: 10px;
         cursor: pointer;
+    }
+    .delete-button {
+        background: #ff4444;
+        font-size: 13px;
+        border: none;
+        color: white;
+       padding: 4px 8px;
+       border-radius: 3px;
+       margin-left: 10px;
+      cursor: pointer;
+    }
+    
+
+
+    /* 添加录音计时器样式 */
+    #recordTimer {
+    display: none; /* 默认隐藏 */
+    color: white;
+    margin-left: 15px;
+    font-family: monospace; /* 等宽字体更美观 */
+    font-size: 16px;
+    }
+    
+    /* 调整按钮容器布局 */
+    #audioControl > div {
+        display: flex;
+        align-items: center;
     }
 
     </style>
@@ -207,7 +236,10 @@
     </div>
 
     <div id="audioControl">
-        <button id="recordBtn">⏺ 开始录音</button>
+        <div>
+            <button id="recordBtn">⏺ 开始录音</button>
+            <span id="recordTimer">00:00</span>
+        </div>
         <div id="playbackList"></div>
     </div>
 
@@ -327,6 +359,8 @@
     let mediaRecorder;
     let audioChunks = [];
     let isRecording = false;
+    let timerInterval;
+    let recordingTime = 0;
 
     // 获取录音按钮和播放列表
     const recordBtn = document.getElementById('recordBtn');
@@ -350,11 +384,13 @@
                     // 创建播放元素
                     const audioElement = document.createElement('div');
                     audioElement.className = 'recording-item';
+                    // <button class="play-button" onclick="this.previousElementSibling.play()">播放</button>
                     audioElement.innerHTML = `
                         <audio controls src="${audioUrl}"></audio>
-                        <button class="play-button" onclick="this.previousElementSibling.play()">播放</button>
-                        <a class="download-link" href="${audioUrl}" download="recording-${Date.now()}.mp3">下载</a>`;
-                    
+                        <a class="download-link" href="${audioUrl}" download="recording-${Date.now()}.mp3">下载</a>
+                       <button class="delete-button">删除</button>
+                    `;
+
                     playbackList.prepend(audioElement);
                     audioChunks = [];
                 };
@@ -367,22 +403,56 @@
         recordBtn.disabled = true;
         console.warn('浏览器不支持录音功能');
     }
+    // 删除录音处理
+    document.getElementById('playbackList').addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('delete-button')) {
+        const item = e.target.closest('.recording-item');
+        if (item) {
+            item.remove();
+            }
+        }
+    });
 
-    // 录音按钮点击处理
+
+
+    // 格式化时间显示
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        return `${mins}:${secs}`;
+    };
+
+    // 修改录音按钮点击处理
     recordBtn.onclick = () => {
         if (!isRecording) {
+            // 开始录音
             mediaRecorder.start();
             recordBtn.textContent = '⏹ 停止录音';
             recordBtn.classList.add('recording');
+            
+            // 显示并启动计时器
+            document.getElementById('recordTimer').style.display = 'inline';
+            timerInterval = setInterval(() => {
+                recordingTime++;
+                document.getElementById('recordTimer').textContent = formatTime(recordingTime);
+            }, 1000);
+            
             isRecording = true;
         } else {
+            // 停止录音
             mediaRecorder.stop();
             recordBtn.textContent = '⏺ 开始录音';
             recordBtn.classList.remove('recording');
+            
+            // 重置计时器
+            clearInterval(timerInterval);
+            recordingTime = 0;
+            document.getElementById('recordTimer').style.display = 'none';
+            document.getElementById('recordTimer').textContent = '00:00';
+            
             isRecording = false;
         }
-    };
-        
+    }; 
     // 执行初始化
     init()
 </script>
